@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Draw on Image</title>
+  <style>
+    /* Add CSS styles for the canvas */
+    canvas {
+      position: absolute;
+      border: 1px solid #000;
+      top: 50px; /* Adjust as needed */
+      left: 50px; /* Adjust as needed */
+    }
+    #container {
+      position: relative;
+      display: inline-block;
+    }
+    #button-container {
+      position: absolute;
+      top: 10px; /* Adjust as needed */
+      right: 10px; /* Adjust as needed */
+      text-align: center;
+    }
+    button {
+      padding: 10px 20px;
+      font-size: 16px;
+      cursor: pointer;
+      background-color: #ffa500; /* Light Orange */
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      margin: 0 10px;
+      transition: background-color 0.3s ease; /* Smooth transition on hover */
+    }
+    button:hover {
+      background-color: #ff7f00; /* Darker shade of Orange on hover */
+    }
+    input[type="color"] {
+      margin: 0 10px;
+      width: 40px;
+      height: 40px;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+  </style>
+</head>
+<body>
+  <!-- HTML structure for the image, canvas, color picker, and buttons -->
+  <div id="container">
+    <img id="myImage" src="https://static.wixstatic.com/media/95d1fc_ac7cfe3f51f14b839e9e28f9592ba6f8~mv2.jpg" alt="Image" style="display: none;" />
+    <canvas id="myCanvas"></canvas>
+  </div>
+  <div id="button-container">
+    <input type="color" id="colorPicker" value="#e44235">
+    <button onclick="eraseCanvas()">Erase</button>
+    <button onclick="saveImage()">Save Image</button>
+  </div>
+
+  <!-- Include JavaScript to enable drawing on the image -->
+  <script>
+    // JavaScript code (Same as the previous code)
+    window.onload = function() {
+      var image = document.getElementById('myImage');
+      var canvas = document.getElementById('myCanvas');
+      var ctx = canvas.getContext('2d');
+      var colorPicker = document.getElementById('colorPicker');
+
+      // Make sure the image is loaded before drawing on it
+      image.onload = function() {
+        canvas.width = image.width;
+        canvas.height = image.height;
+        ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+      };
+
+      image.src = 'https://static.wixstatic.com/media/95d1fc_ac7cfe3f51f14b839e9e28f9592ba6f8~mv2.jpg'; // Replace this with your image URL
+
+      var painting = false;
+
+      canvas.addEventListener('mousedown', startPosition);
+      canvas.addEventListener('mouseup', endPosition);
+      canvas.addEventListener('mousemove', draw);
+
+      function startPosition(e) {
+        painting = true;
+        draw(e);
+      }
+
+      function endPosition() {
+        painting = false;
+        ctx.beginPath();
+      }
+
+      function draw(e) {
+        if (!painting) return;
+
+        ctx.lineWidth = 5;
+        ctx.lineCap = 'round';
+        ctx.strokeStyle = colorPicker.value; // Get the selected color from the color picker
+
+        var rect = canvas.getBoundingClientRect();
+        var x = e.clientX - rect.left;
+        var y = e.clientY - rect.top;
+
+        ctx.lineTo(x, y);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(x, y);
+      }
+    }
+
+    // Function to erase canvas and restore the original image
+    function eraseCanvas() {
+      var canvas = document.getElementById('myCanvas');
+      var ctx = canvas.getContext('2d');
+      var image = document.getElementById('myImage');
+
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+      ctx.drawImage(image, 0, 0, canvas.width, canvas.height);
+    }
+
+    // Function to save the edited image
+    function saveImage() {
+      var canvas = document.getElementById('myCanvas');
+      var link = document.createElement('a');
+      link.href = canvas.toDataURL('image/png');
+      link.download = 'edited_image.png';
+      link.click();
+    }
+  </script>
+</body>
+</html>
