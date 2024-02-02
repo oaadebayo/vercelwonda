@@ -11,7 +11,7 @@
 
 <body>
     <div>
-        <!-- <label for="colorPicker">Color:</label>
+        <!--<label for="colorPicker">Color:</label>
         <input type="color" id="colorPicker" value="#000000"> -->
         <button onclick="undo()">Undo</button>
         <button onclick="erase()">Erase</button>
@@ -21,9 +21,6 @@
     <div id="container"></div>
 
     <script>
-
-        // Check if user has an existing data in firebase
-
         const stage = new Konva.Stage({
             container: 'container',
             width: 793, // A4 width in pixels at 96 dpi
@@ -35,15 +32,11 @@
 
         let isDrawing = false;
         let lastLine;
-
+        let isEditing = false; // Flag to track editing state
 
         function setupDrawing() {
-
-
-
             stage.on('mousedown touchstart', (e) => {
                 if (eraseMode) {
-                    // Eraser mode is handled in mousemove, not mousedown
                     return;
                 }
 
@@ -60,9 +53,7 @@
 
             stage.on('mousemove touchmove', (e) => {
                 if (eraseMode) {
-                    // Eraser mode: update cursor
                     document.body.classList.add('eraser-mode');
-
                     const pos = stage.getPointerPosition();
                     const eraser = new Konva.Circle({
                         x: pos.x,
@@ -74,11 +65,8 @@
                     layer.add(eraser);
                     layer.batchDraw();
                 } else {
-                    // Drawing mode: restore default cursor and draw line
                     document.body.classList.remove('eraser-mode');
-
                     if (!isDrawing || !lastLine) return;
-
                     const pos = stage.getPointerPosition();
                     lastLine.points(lastLine.points().concat([pos.x, pos.y]));
                     layer.batchDraw();
@@ -87,15 +75,12 @@
 
             stage.on('mouseup touchend', () => {
                 isDrawing = false;
-
-                // Remove eraser circle if present
                 const eraser = layer.findOne('.eraser');
                 if (eraser) {
                     eraser.destroy();
                     layer.batchDraw();
                 }
             });
-
         }
 
         function undo() {
@@ -113,6 +98,8 @@
         }
 
         function addText() {
+            if (isEditing) return; // Prevent adding new text when editing is active
+
             const textNode = new Konva.Text({
                 x: 50,
                 y: 50,
@@ -123,14 +110,17 @@
             });
 
             textNode.on('dblclick', () => {
-                // Handle double click to start editing
+                if (isEditing) return; // Prevent starting editing when already editing
+                isEditing = true; // Set editing flag
+
+                textNode.text(''); // Clear the text content
+
                 const textPosition = textNode.absolutePosition();
                 const stageBox = stage.container().getBoundingClientRect();
 
-                // Create an input element for editing
                 const input = document.createElement('input');
                 input.type = 'text';
-                input.value = textNode.text();
+                input.value = ''; // Set initial value to empty string
                 input.style.position = 'absolute';
                 input.style.left = textPosition.x + stageBox.left + 'px';
                 input.style.top = textPosition.y + stageBox.top + 'px';
@@ -147,14 +137,13 @@
                 input.focus();
 
                 input.addEventListener('blur', () => {
-                    // Handle blur (loss of focus) to stop editing
                     textNode.text(input.value);
                     layer.batchDraw();
                     document.body.removeChild(input);
+                    isEditing = false; // Reset editing flag
                 });
 
                 input.addEventListener('keydown', (e) => {
-                    // Handle Enter key to stop editing
                     if (e.key === 'Enter') {
                         input.blur();
                     }
@@ -165,36 +154,25 @@
             layer.batchDraw();
         }
 
+        function save() {
+            const drawingData = layer.toJSON();
+            window.localStorage.setItem('heyzine', drawingData);
+        }
+
         function loadSavedData() {
             const savedData = localStorage.getItem('heyzine');
             if (savedData) {
-                const parsedData = JSON.parse(savedData); // Parse JSON string
-                console.log('therer')
+                const parsedData = JSON.parse(savedData);
                 Konva.Node.create(parsedData, layer, () => {
                     stage.batchDraw();
-                    setupDrawing(); // Call the drawing setup function after data is loaded
+                    setupDrawing();
                 });
             } else {
-                console.log('here')
-                setupDrawing(); // Call the drawing setup function if no existing data
+                setupDrawing();
             }
         }
 
-        loadSavedData()
-
-
-
-
-        function save() {
-            const drawingData = layer.toJSON();
-            console.log(drawingData);
-
-            // Save to firebase
-
-            window.localStorage.setItem('heyzine', drawingData)
-            // You can save the drawingData as JSON or send it to a server for further processing
-        }
-
+        loadSavedData();
 
     </script>
 </body>

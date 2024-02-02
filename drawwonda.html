@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Drawing App</title>  
+</head>
+
+<body>
+
+  <canvas id="draw" width="800" height="500" style="background: transparent;"></canvas>
+  
+  <br />
+
+  <input type="color" id="colorPicker">
+  
+  <button id="undo">Undo</button>
+  <button id="erase">Erase</button> 
+  <button id="save">Save</button>
+
+  <script>
+    var canvas = document.getElementById('draw');
+    var ctx = canvas.getContext('2d');
+    
+    var colorPicker = document.getElementById('colorPicker');
+    var undoBtn = document.getElementById('undo');
+    var eraseBtn = document.getElementById('erase');
+    var saveBtn = document.getElementById('save');
+    
+    var canvasState = [];
+    
+    // Drawing event handlers
+    function startPosition(){
+      // Store current canvas state
+      saveState(); 
+    }
+
+    function draw(e){
+      // Draw line 
+      ctx.lineTo(e.clientX, e.clientY);
+      ctx.stroke();
+    }
+    
+    // Undo last stroke
+    function undoLast(){ 
+      if(canvasState.length > 0){  
+        // Remove latest state and restore  
+        canvasState.pop();
+        restoreCanvas();       
+      } 
+    }
+
+    // Redraw canvas from saved state
+    function restoreCanvas(){
+      var restoreState = canvasState[canvasState.length-1];
+      var img = new Image();
+      img.src = restoreState;
+      img.onload = function(){ 
+        ctx.clearRect(0, 0, canvas.width, canvas.height); 
+        ctx.drawImage(img, 0, 0); 
+      }
+    }
+
+    // Erase mode with white stroke color
+    function erase(){ 
+      ctx.strokeStyle = "white";
+    }
+
+    // Save canvas image
+    function saveCanvas(){
+      var imgURL = canvas.toDataURL('image/png');
+      var dlLink = document.createElement('a');
+      dlLink.download = "canvas";
+      dlLink.href = imgURL; 
+      dlLink.click(); 
+    }
+    
+    // Set drawing event listeners
+    canvas.addEventListener('mousedown', startPosition); 
+    canvas.addEventListener('mousemove', draw);
+
+    // Set button event listeners
+    undoBtn.addEventListener('click', undoLast);
+    eraseBtn.addEventListener('click', erase);
+    saveBtn.addEventListener('click', saveCanvas);
+    
+    // Set initial color
+    ctx.strokeStyle = "#1E1E1E";
+  </script>
+
+</body>
+</html>
