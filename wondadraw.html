@@ -12,10 +12,10 @@
 <body>
     <div>
         <label for="colorPicker">Color:</label>
-        <input type="color" id="colorPicker" value="#000000">
+        <input type="color" id="colorPicker" value="#000000"> 
         <button onclick="undo()">Undo</button>
         <button onclick="erase()">Erase</button>
-        <button onclick="addText()">Add Text</button>
+       <!-- <button onclick="addText()">Add Text</button> -->
         <button onclick="save()">Save!</button>
     </div>
     <div id="container"></div>
@@ -118,7 +118,7 @@
                 y: 50,
                 text: 'Edit me!',
                 fontSize: 18,
-                fill: document.getElementById('colorPicker').value,
+                //fill: document.getElementById('colorPicker').value,
                 draggable: true,
             });
 
