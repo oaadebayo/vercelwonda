@@ -1,0 +1,202 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Konva.js A4 Canvas</title>
+    <!-- Konva.js -->
+    <script src="https://unpkg.com/konva@9.3.1/konva.min.js"></script>
+</head>
+
+<body>
+    <div>
+        <label for="colorPicker">Color:</label>
+        <input type="color" id="colorPicker" value="#000000">
+        <button onclick="undo()">Undo</button>
+        <button onclick="erase()">Erase</button>
+        <button onclick="addText()">Add Text</button>
+        <button onclick="save()">Save!</button>
+    </div>
+    <div id="container"></div>
+
+    <script>
+
+        // Check if user has an existing data in firebase
+
+        const stage = new Konva.Stage({
+            container: 'container',
+            width: 793, // A4 width in pixels at 96 dpi
+            height: 1122, // A4 height in pixels at 96 dpi
+        });
+
+        const layer = new Konva.Layer();
+        stage.add(layer);
+
+        let isDrawing = false;
+        let lastLine;
+
+
+        function setupDrawing() {
+
+
+
+            stage.on('mousedown touchstart', (e) => {
+                if (eraseMode) {
+                    // Eraser mode is handled in mousemove, not mousedown
+                    return;
+                }
+
+                isDrawing = true;
+                const pos = stage.getPointerPosition();
+                lastLine = new Konva.Line({
+                    stroke: document.getElementById('colorPicker').value,
+                    strokeWidth: 5,
+                    globalCompositeOperation: 'source-over',
+                    points: [pos.x, pos.y],
+                });
+                layer.add(lastLine);
+            });
+
+            stage.on('mousemove touchmove', (e) => {
+                if (eraseMode) {
+                    // Eraser mode: update cursor
+                    document.body.classList.add('eraser-mode');
+
+                    const pos = stage.getPointerPosition();
+                    const eraser = new Konva.Circle({
+                        x: pos.x,
+                        y: pos.y,
+                        radius: 10,
+                        fill: 'white',
+                        globalCompositeOperation: 'destination-out',
+                    });
+                    layer.add(eraser);
+                    layer.batchDraw();
+                } else {
+                    // Drawing mode: restore default cursor and draw line
+                    document.body.classList.remove('eraser-mode');
+
+                    if (!isDrawing || !lastLine) return;
+
+                    const pos = stage.getPointerPosition();
+                    lastLine.points(lastLine.points().concat([pos.x, pos.y]));
+                    layer.batchDraw();
+                }
+            });
+
+            stage.on('mouseup touchend', () => {
+                isDrawing = false;
+
+                // Remove eraser circle if present
+                const eraser = layer.findOne('.eraser');
+                if (eraser) {
+                    eraser.destroy();
+                    layer.batchDraw();
+                }
+            });
+
+        }
+
+        function undo() {
+            const children = layer.getChildren();
+            if (children.length > 0) {
+                children[children.length - 1].destroy();
+                layer.batchDraw();
+            }
+        }
+
+        let eraseMode = false;
+        function erase() {
+            eraseMode = !eraseMode;
+            document.getElementById('colorPicker').disabled = eraseMode;
+        }
+
+        function addText() {
+            const textNode = new Konva.Text({
+                x: 50,
+                y: 50,
+                text: 'Edit me!',
+                fontSize: 18,
+                fill: document.getElementById('colorPicker').value,
+                draggable: true,
+            });
+
+            textNode.on('dblclick', () => {
+                // Handle double click to start editing
+                const textPosition = textNode.absolutePosition();
+                const stageBox = stage.container().getBoundingClientRect();
+
+                // Create an input element for editing
+                const input = document.createElement('input');
+                input.type = 'text';
+                input.value = textNode.text();
+                input.style.position = 'absolute';
+                input.style.left = textPosition.x + stageBox.left + 'px';
+                input.style.top = textPosition.y + stageBox.top + 'px';
+                input.style.fontSize = textNode.fontSize() + 'px';
+                input.style.color = textNode.fill();
+                input.style.border = 'none';
+                input.style.padding = '0';
+                input.style.margin = '0';
+                input.style.outline = 'none';
+                input.style.background = 'none';
+                input.style.cursor = 'text';
+
+                document.body.appendChild(input);
+                input.focus();
+
+                input.addEventListener('blur', () => {
+                    // Handle blur (loss of focus) to stop editing
+                    textNode.text(input.value);
+                    layer.batchDraw();
+                    document.body.removeChild(input);
+                });
+
+                input.addEventListener('keydown', (e) => {
+                    // Handle Enter key to stop editing
+                    if (e.key === 'Enter') {
+                        input.blur();
+                    }
+                });
+            });
+
+            layer.add(textNode);
+            layer.batchDraw();
+        }
+
+        function loadSavedData() {
+            const savedData = localStorage.getItem('heyzine');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData); // Parse JSON string
+                console.log('therer')
+                Konva.Node.create(parsedData, layer, () => {
+                    stage.batchDraw();
+                    setupDrawing(); // Call the drawing setup function after data is loaded
+                });
+            } else {
+                console.log('here')
+                setupDrawing(); // Call the drawing setup function if no existing data
+            }
+        }
+
+        loadSavedData()
+
+
+
+
+        function save() {
+            const drawingData = layer.toJSON();
+            console.log(drawingData);
+
+            // Save to firebase
+
+            window.localStorage.setItem('heyzine', drawingData)
+            // You can save the drawingData as JSON or send it to a server for further processing
+        }
+
+
+    </script>
+</body>
+
+</html>
