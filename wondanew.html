@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Editable Section</title>
+    <style>
+        .editable-section {
+            position: relative;
+            border: 1px solid #ddd;
+            padding: 10px;
+            margin: 20px;
+            cursor: pointer;
+        }
+
+        .editable-input {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 5px;
+            box-sizing: border-box;
+            font-size: 16px;
+            border: 1px solid #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="editable-section" onclick="startEditing(this)">
+        Click to Edit
+        <input type="text" class="editable-input" onblur="stopEditing(this)">
+    </div>
+
+    <script>
+        function startEditing(section) {
+            const inputField = section.querySelector('.editable-input');
+            section.innerHTML = ''; // Clear existing content
+            inputField.style.display = 'block';
+            inputField.value = section.dataset.value || ''; // Retrieve previous value
+            inputField.focus();
+        }
+
+        function stopEditing(inputField) {
+            const section = inputField.parentElement;
+            const newValue = inputField.value.trim();
+
+            if (newValue !== '') {
+                section.innerHTML = newValue;
+                section.dataset.value = newValue; // Store value for future reference
+            } else {
+                section.innerHTML = 'Click to Edit';
+                delete section.dataset.value;
+            }
+        }
+    </script>
+
+</body>
+
+</html>
